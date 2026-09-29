@@ -3,22 +3,40 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = "https://nryotlwywwlhrbjqqony.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_MDCBv4UYZKy1KNPAafZnag_Hm1yot1m";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 const $ = (id) => document.getElementById(id);
 
 let participants = [];
 let reasons = [];
 let records = [];
-let selectedDate = new Date().toISOString().slice(0, 10);
+
+let selectedDate =
+  new Date().toISOString().slice(0, 10);
+
+let currentFilter = "all";
+
+
+/* =========================
+   UTILIDADES
+========================= */
 
 function toast(msg) {
   const el = $("toast");
+
   if (!el) return;
+
   el.textContent = msg;
   el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 2600);
+
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 2600);
 }
+
 
 function initials(name) {
   return String(name || "")
@@ -29,6 +47,7 @@ function initials(name) {
     .join("")
     .toUpperCase();
 }
+
 
 function dateText(d) {
   return new Intl.DateTimeFormat("es-CO", {
@@ -41,6 +60,21 @@ function dateText(d) {
     .replace(/^./, m => m.toUpperCase());
 }
 
+
+function esc(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[char])
+  );
+}
+
+
 function configured() {
   return (
     SUPABASE_URL.startsWith("https://") &&
@@ -48,19 +82,28 @@ function configured() {
   );
 }
 
+
+/* =========================
+   INICIO
+========================= */
+
 async function boot() {
-  $("datePicker").value = selectedDate;
-  $("selectedDateLabel").textContent = dateText(selectedDate);
+
+  $("voteDate").value = selectedDate;
+
+  $("dateTitle").textContent =
+    dateText(selectedDate);
 
   setupEvents();
 
   if (!configured()) {
     $("loginError").textContent =
-      "Configura primero SUPABASE_URL y SUPABASE_ANON_KEY en app.js.";
+      "Configura SUPABASE_URL y SUPABASE_ANON_KEY.";
     return;
   }
 
   try {
+
     const {
       data: { session }
     } = await supabase.auth.getSession();
@@ -71,47 +114,72 @@ async function boot() {
       showLogin();
     }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        showApp();
-      } else {
-        showLogin();
+    supabase.auth.onAuthStateChange(
+      (_event, session) => {
+
+        if (session) {
+          showApp();
+        } else {
+          showLogin();
+        }
+
       }
-    });
+    );
+
   } catch (error) {
+
     console.error(error);
     showLogin();
+
   }
 }
 
+
 function showLogin() {
+
   $("loginView").classList.remove("hidden");
   $("appView").classList.add("hidden");
+
 }
 
+
 async function showApp() {
+
   $("loginView").classList.add("hidden");
   $("appView").classList.remove("hidden");
 
   try {
+
     await loadAll();
+
   } catch (error) {
+
     console.error(error);
     toast("No se pudieron cargar los datos.");
+
   }
 }
 
+
+/* =========================
+   CARGAR DATOS
+========================= */
+
 async function loadAll() {
+
   await Promise.all([
     loadParticipants(),
     loadReasons()
   ]);
 
   await loadRecords();
+
   renderAll();
 }
 
+
 async function loadParticipants() {
+
   const { data, error } = await supabase
     .from("participants")
     .select("*")
@@ -119,16 +187,21 @@ async function loadParticipants() {
     .order("name");
 
   if (error) {
+
     console.error(error);
     toast(error.message);
+
     participants = [];
+
     return;
   }
 
   participants = data || [];
 }
 
+
 async function loadReasons() {
+
   const { data, error } = await supabase
     .from("reasons")
     .select("*")
@@ -136,651 +209,1067 @@ async function loadReasons() {
     .order("name");
 
   if (error) {
+
     console.error(error);
     toast(error.message);
+
     reasons = [];
+
     return;
   }
 
   reasons = data || [];
 }
 
+
 async function loadRecords() {
+
   const { data, error } = await supabase
     .from("daily_records")
-    .select("*, reasons(name), receipts(*)")
+    .select("*, reasons(name)")
     .eq("vote_date", selectedDate);
 
   if (error) {
+
     console.error(error);
     toast(error.message);
+
     records = [];
+
     return;
   }
 
   records = data || [];
 }
 
+
 function recordFor(pid) {
-  return records.find(r => r.participant_id === pid);
+
+  return records.find(
+    r => r.participant_id === pid
+  );
 }
 
+
+/* =========================
+   RENDER GENERAL
+========================= */
+
 function renderAll() {
-  $("selectedDateLabel").textContent = dateText(selectedDate);
+
+  $("dateTitle").textContent =
+    dateText(selectedDate);
+
   renderStats();
   renderDaily();
   renderManageParticipants();
-  renderReasons();
+
 }
 
+
 function renderStats() {
+
   const total = participants.length;
 
-  const voted = participants.filter(
-    p => recordFor(p.id)?.status === "voted"
-  ).length;
+  const voted =
+    participants.filter(
+      p => recordFor(p.id)?.status === "voted"
+    ).length;
 
-  const noVoted = participants.filter(
-    p => recordFor(p.id)?.status === "no_voted"
-  ).length;
+  const justified =
+    participants.filter(
+      p => recordFor(p.id)?.status === "justified"
+    ).length;
 
-  const justified = participants.filter(
-    p => recordFor(p.id)?.status === "justified"
-  ).length;
+  const pending =
+    participants.filter(
+      p =>
+        !recordFor(p.id) ||
+        recordFor(p.id)?.status === "pending"
+    ).length;
 
-  const pending = participants.filter(
-    p => !recordFor(p.id) ||
-         recordFor(p.id)?.status === "pending"
-  ).length;
 
   $("totalCount").textContent = total;
   $("votedCount").textContent = voted;
-  $("noVotedCount").textContent = noVoted;
   $("justifiedCount").textContent = justified;
   $("pendingCount").textContent = pending;
 }
 
-function renderDaily() {
-  const el = $("participantsList");
 
-  if (!participants.length) {
+/* =========================
+   FILTROS
+========================= */
+
+function setFilter(filter) {
+
+  currentFilter = filter;
+
+  document
+    .querySelectorAll(".filter-card")
+    .forEach(card => {
+
+      card.classList.toggle(
+        "active",
+        card.dataset.filter === filter
+      );
+
+    });
+
+  const titles = {
+    all: "Estado de votación",
+    voted: "Personas que votaron",
+    justified: "Personas justificadas",
+    pending: "Personas pendientes"
+  };
+
+  const hints = {
+    all: "Mostrando todos los integrantes",
+    voted: "Mostrando solo quienes votaron",
+    justified: "Mostrando solo las justificadas",
+    pending: "Mostrando solo las pendientes"
+  };
+
+  $("listTitle").textContent =
+    titles[filter] || titles.all;
+
+  $("filterHint").textContent =
+    hints[filter] || hints.all;
+
+  renderDaily();
+}
+
+
+/* =========================
+   LISTA DIARIA
+========================= */
+
+function renderDaily() {
+
+  const el = $("peopleList");
+
+  let visibleParticipants =
+    participants.filter(p => {
+
+      const record = recordFor(p.id);
+      const status = record?.status;
+
+      if (currentFilter === "all") {
+        return true;
+      }
+
+      if (currentFilter === "voted") {
+        return status === "voted";
+      }
+
+      if (currentFilter === "justified") {
+        return status === "justified";
+      }
+
+      if (currentFilter === "pending") {
+        return (
+          !record ||
+          status === "pending"
+        );
+      }
+
+      return true;
+
+    });
+
+
+  if (!visibleParticipants.length) {
+
+    const messages = {
+      voted: "Nadie ha votado todavía.",
+      justified: "No hay justificadas.",
+      pending: "No hay pendientes.",
+      all: "No hay participantes todavía."
+    };
+
     el.innerHTML = `
       <div class="person-row">
         <div>
-          <strong>No hay participantes todavía.</strong>
+          <strong>
+            ${
+              messages[currentFilter] ||
+              messages.all
+            }
+          </strong>
+
           <div class="person-sub">
-            Agrega la primera desde “Participantes”.
+            ${
+              currentFilter === "all"
+                ? "Agrega la primera desde “Participantes”."
+                : "Prueba con otro filtro."
+            }
           </div>
         </div>
       </div>
     `;
+
     return;
   }
 
-  el.innerHTML = participants.map(p => {
-    const r = recordFor(p.id);
 
-    let cls = "status-pending";
-    let txt = "🔴 Pendiente";
+  el.innerHTML =
+    visibleParticipants.map(p => {
 
-    if (r?.status === "voted") {
-      cls = "status-voted";
-      txt = "🟢 Votó";
-    }
+      const r = recordFor(p.id);
 
-    if (r?.status === "no_voted") {
-      cls = "status-no-voted";
-      txt = "❌ No votó";
-    }
+      let cls = "status-pending";
+      let txt = "🔴 Pendiente";
 
-    if (r?.status === "justified") {
-      cls = "status-justified";
-      txt = `🟡 ${r.reasons?.name || "Justificada"}`;
-    }
 
-    return `
-      <div class="person-row">
-        <div class="person-info">
-          <div class="avatar">${initials(p.name)}</div>
+      if (r?.status === "voted") {
 
-          <div>
-            <div class="person-name">${esc(p.name)}</div>
-            <div class="person-sub">
-              ${
-                r?.receipts?.length
-                  ? "📸 Comprobante guardado"
-                  : "Sin comprobante"
-              }
+        cls = "status-voted";
+        txt = "🟢 Votó";
+
+      }
+
+
+      if (r?.status === "justified") {
+
+        cls = "status-justified";
+
+        txt =
+          `🟡 ${
+            r.reasons?.name ||
+            "Justificada"
+          }`;
+
+      }
+
+
+      return `
+        <div class="person-row">
+
+          <div class="person-info">
+
+            <div class="avatar">
+              ${initials(p.name)}
             </div>
+
+            <div>
+
+              <div class="person-name">
+                ${esc(p.name)}
+              </div>
+
+              <div class="person-sub">
+                ${
+                  r?.notes
+                    ? esc(r.notes)
+                    : "Sin notas"
+                }
+              </div>
+
+            </div>
+
           </div>
+
+
+          <button
+            type="button"
+            class="status-pill ${cls}"
+            data-record="${p.id}"
+          >
+            ${txt}
+          </button>
+
         </div>
+      `;
 
-        <button
-          type="button"
-          class="status-pill ${cls}"
-          data-record="${p.id}">
-          ${txt}
-        </button>
-      </div>
-    `;
-  }).join("");
+    }).join("");
 
-  el.querySelectorAll("[data-record]").forEach(button => {
-    button.addEventListener("click", () => {
-      openRecord(button.dataset.record);
+
+  el
+    .querySelectorAll("[data-record]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+          openRecord(button.dataset.record);
+        }
+      );
+
     });
-  });
 }
 
-function renderManageParticipants() {
-  const el = $("manageParticipants");
 
-  el.innerHTML =
-    participants.map(p => `
-      <div class="manage-row">
-        <div class="person-info">
-          <div class="avatar">${initials(p.name)}</div>
-          <strong>${esc(p.name)}</strong>
-        </div>
-
-        <div class="manage-actions">
-          <button
-            type="button"
-            data-edit="${p.id}">
-            ✏️
-          </button>
-
-          <button
-            type="button"
-            data-del="${p.id}">
-            🗑️
-          </button>
-        </div>
-      </div>
-    `).join("") ||
-    `<div class="person-row">Aún no hay integrantes.</div>`;
-
-  el.querySelectorAll("[data-edit]").forEach(button => {
-    button.addEventListener("click", () => {
-      editParticipant(button.dataset.edit);
-    });
-  });
-
-  el.querySelectorAll("[data-del]").forEach(button => {
-    button.addEventListener("click", () => {
-      deleteParticipant(button.dataset.del);
-    });
-  });
-}
-
-function renderReasons() {
-  const el = $("manageReasons");
-
-  el.innerHTML =
-    reasons.map(r => `
-      <div class="manage-row">
-        <strong>${esc(r.name)}</strong>
-
-        <div class="manage-actions">
-          <button
-            type="button"
-            data-edit-reason="${r.id}">
-            ✏️
-          </button>
-
-          <button
-            type="button"
-            data-del-reason="${r.id}">
-            🗑️
-          </button>
-        </div>
-      </div>
-    `).join("") ||
-    `<div class="person-row">Aún no hay motivos.</div>`;
-
-  el.querySelectorAll("[data-edit-reason]").forEach(button => {
-    button.addEventListener("click", () => {
-      editReason(button.dataset.editReason);
-    });
-  });
-
-  el.querySelectorAll("[data-del-reason]").forEach(button => {
-    button.addEventListener("click", () => {
-      deleteReason(button.dataset.delReason);
-    });
-  });
-}
+/* =========================
+   REGISTRO
+========================= */
 
 async function openRecord(pid) {
-  const p = participants.find(x => x.id === pid);
-  if (!p) return;
 
-  const r = recordFor(pid);
+  const participant =
+    participants.find(
+      x => x.id === pid
+    );
 
-  $("recordParticipantId").value = pid;
-  $("recordId").value = r?.id || "";
+  if (!participant) return;
+
+  const record =
+    recordFor(pid);
+
+
+  $("recordParticipantId").value =
+    pid;
+
+  $("recordId").value =
+    record?.id || "";
+
 
   $("recordPerson").innerHTML = `
-    <h3>${esc(p.name)}</h3>
-    <p class="person-sub">${dateText(selectedDate)}</p>
+    <h2>${esc(participant.name)}</h2>
+
+    <p class="person-sub">
+      ${dateText(selectedDate)}
+    </p>
   `;
 
-  $("recordStatus").value = r?.status || "pending";
-  $("recordNotes").value = r?.notes || "";
 
-  fillReason(r?.reason_id || "");
+  $("recordStatus").value =
+    record?.status || "pending";
 
-  $("receiptFile").value = "";
 
-  $("receiptName").textContent =
-    r?.receipts?.length
-      ? "Comprobante guardado"
-      : "Ninguno";
+  $("recordNotes").value =
+    record?.notes || "";
 
-  $("receiptPreview").innerHTML =
-    r?.receipts?.[0]?.public_url
-      ? `<img src="${r.receipts[0].public_url}" alt="Comprobante">`
-      : "";
+
+  fillReason(
+    record?.reason_id || ""
+  );
+
 
   toggleReason();
 
   $("recordDialog").showModal();
 }
 
-function fillReason(val) {
+
+function fillReason(value) {
+
   $("recordReason").innerHTML =
-    `<option value="">Selecciona un motivo</option>` +
-    reasons.map(r => `
+    `<option value="">
+      Selecciona un motivo
+    </option>` +
+
+    reasons.map(reason => `
       <option
-        value="${r.id}"
-        ${r.id === val ? "selected" : ""}>
-        ${esc(r.name)}
+        value="${reason.id}"
+        ${
+          reason.id === value
+            ? "selected"
+            : ""
+        }
+      >
+        ${esc(reason.name)}
       </option>
     `).join("");
 }
 
+
 function toggleReason() {
-  $("reasonWrap").style.display =
-    $("recordStatus").value === "justified"
-      ? "block"
-      : "none";
+
+  const justified =
+    $("recordStatus").value === "justified";
+
+  $("reasonWrap").classList.toggle(
+    "hidden",
+    !justified
+  );
 }
 
-async function saveRecord() {
-  const pid = $("recordParticipantId").value;
-  const status = $("recordStatus").value;
 
-  const reason_id =
+async function saveRecord() {
+
+  const participantId =
+    $("recordParticipantId").value;
+
+  const status =
+    $("recordStatus").value;
+
+
+  const reasonId =
     status === "justified"
-      ? ($("recordReason").value || null)
+      ? (
+          $("recordReason").value ||
+          null
+        )
       : null;
 
-  const notes = $("recordNotes").value.trim();
+
+  const notes =
+    $("recordNotes")
+      .value
+      .trim();
+
 
   const payload = {
-    participant_id: pid,
-    vote_date: selectedDate,
+
+    participant_id:
+      participantId,
+
+    vote_date:
+      selectedDate,
+
     status,
-    reason_id,
+
+    reason_id:
+      reasonId,
+
     notes
+
   };
 
-  let id = $("recordId").value;
 
-  let query;
+  const existingId =
+    $("recordId").value;
 
-  if (id) {
-    query = supabase
-      .from("daily_records")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
+
+  let result;
+
+
+  if (existingId) {
+
+    result =
+      await supabase
+        .from("daily_records")
+        .update(payload)
+        .eq("id", existingId)
+        .select()
+        .single();
+
   } else {
-    query = supabase
-      .from("daily_records")
-      .upsert(payload, {
-        onConflict: "participant_id,vote_date"
-      })
-      .select()
-      .single();
+
+    result =
+      await supabase
+        .from("daily_records")
+        .upsert(
+          payload,
+          {
+            onConflict:
+              "participant_id,vote_date"
+          }
+        )
+        .select()
+        .single();
+
   }
 
-  const { data, error } = await query;
 
-  if (error) {
-    console.error(error);
-    toast(error.message);
+  if (result.error) {
+
+    console.error(result.error);
+
+    toast(result.error.message);
+
     return;
   }
 
-  id = data.id;
-
-  const file = $("receiptFile").files[0];
-
-  if (file) {
-    const ext = file.name
-      .split(".")
-      .pop()
-      .toLowerCase();
-
-    const path =
-      `${id}/${crypto.randomUUID()}.${ext}`;
-
-    const up = await supabase
-      .storage
-      .from("voting-receipts")
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type
-      });
-
-    if (up.error) {
-      toast(up.error.message);
-      return;
-    }
-
-    const pub =
-      supabase
-        .storage
-        .from("voting-receipts")
-        .getPublicUrl(path)
-        .data.publicUrl;
-
-    const ins = await supabase
-      .from("receipts")
-      .insert({
-        daily_record_id: id,
-        file_name: file.name,
-        file_url: pub
-      });
-
-    if (ins.error) {
-      toast(ins.error.message);
-      return;
-    }
-  }
 
   $("recordDialog").close();
 
+
   await loadRecords();
+
   renderAll();
+
 
   toast("Registro guardado 💜");
 }
 
-async function editParticipant(id) {
-  const p = participants.find(x => x.id === id);
-  if (!p) return;
 
-  $("participantDialogTitle").textContent =
-    "Editar integrante";
+/* =========================
+   PARTICIPANTES
+========================= */
 
-  $("participantId").value = p.id;
-  $("participantName").value = p.name;
+function renderManageParticipants() {
 
-  $("participantDialog").showModal();
+  const el =
+    $("manageList");
+
+
+  el.innerHTML =
+    participants.map(p => `
+
+      <div class="manage-row">
+
+        <div class="person-info">
+
+          <div class="avatar">
+            ${initials(p.name)}
+          </div>
+
+          <strong>
+            ${esc(p.name)}
+          </strong>
+
+        </div>
+
+
+        <div class="manage-actions">
+
+          <button
+            type="button"
+            data-edit="${p.id}"
+          >
+            ✏️
+          </button>
+
+          <button
+            type="button"
+            data-del="${p.id}"
+          >
+            🗑️
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("") ||
+
+    `
+      <div class="person-row">
+        Aún no hay integrantes.
+      </div>
+    `;
+
+
+  el
+    .querySelectorAll("[data-edit]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+          editParticipant(
+            button.dataset.edit
+          );
+        }
+      );
+
+    });
+
+
+  el
+    .querySelectorAll("[data-del]")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+          deleteParticipant(
+            button.dataset.del
+          );
+        }
+      );
+
+    });
 }
 
+
+function editParticipant(id) {
+
+  const participant =
+    participants.find(
+      x => x.id === id
+    );
+
+  if (!participant) return;
+
+
+  $("participantDialogTitle")
+    .textContent =
+      "Editar integrante";
+
+
+  $("participantId").value =
+    participant.id;
+
+
+  $("participantName").value =
+    participant.name;
+
+
+  $("participantDialog")
+    .showModal();
+}
+
+
+async function saveParticipant() {
+
+  const id =
+    $("participantId").value;
+
+  const name =
+    $("participantName")
+      .value
+      .trim();
+
+
+  if (!name) return;
+
+
+  let result;
+
+
+  if (id) {
+
+    result =
+      await supabase
+        .from("participants")
+        .update({
+          name
+        })
+        .eq("id", id);
+
+  } else {
+
+    result =
+      await supabase
+        .from("participants")
+        .insert({
+          name,
+          active: true
+        });
+
+  }
+
+
+  if (result.error) {
+
+    toast(result.error.message);
+
+    return;
+  }
+
+
+  $("participantDialog")
+    .close();
+
+
+  await loadParticipants();
+
+  renderAll();
+
+
+  toast("Integrante guardada 💜");
+}
+
+
 async function deleteParticipant(id) {
-  const p = participants.find(x => x.id === id);
-  if (!p) return;
+
+  const participant =
+    participants.find(
+      x => x.id === id
+    );
+
+  if (!participant) return;
+
 
   if (
     !confirm(
-      `¿Eliminar a ${p.name}?\n\nSus registros anteriores se conservarán.`
+      `¿Eliminar a ${participant.name}?\n\nSus registros anteriores se conservarán.`
     )
   ) {
     return;
   }
 
-  const { error } = await supabase
-    .from("participants")
-    .update({ active: false })
-    .eq("id", id);
+
+  const { error } =
+    await supabase
+      .from("participants")
+      .update({
+        active: false
+      })
+      .eq("id", id);
+
 
   if (error) {
+
     toast(error.message);
+
     return;
   }
 
+
   await loadParticipants();
+
   renderAll();
+
 
   toast("Integrante eliminada");
 }
 
-async function saveParticipant() {
-  const id = $("participantId").value;
-  const name = $("participantName").value.trim();
 
-  if (!name) return;
-
-  if (id) {
-    const { error } = await supabase
-      .from("participants")
-      .update({ name })
-      .eq("id", id);
-
-    if (error) {
-      toast(error.message);
-      return;
-    }
-  } else {
-    const { error } = await supabase
-      .from("participants")
-      .insert({
-        name,
-        active: true
-      });
-
-    if (error) {
-      toast(error.message);
-      return;
-    }
-  }
-
-  $("participantDialog").close();
-
-  await loadParticipants();
-  renderAll();
-
-  toast("Integrante guardada 💜");
-}
-
-async function editReason(id) {
-  const r = reasons.find(x => x.id === id);
-  if (!r) return;
-
-  $("reasonDialogTitle").textContent =
-    "Editar motivo";
-
-  $("reasonId").value = r.id;
-  $("reasonName").value = r.name;
-
-  $("reasonDialog").showModal();
-}
-
-async function deleteReason(id) {
-  if (!confirm("¿Eliminar este motivo?")) return;
-
-  const { error } = await supabase
-    .from("reasons")
-    .update({ active: false })
-    .eq("id", id);
-
-  if (error) {
-    toast(error.message);
-    return;
-  }
-
-  await loadReasons();
-  renderAll();
-
-  toast("Motivo eliminado");
-}
-
-async function saveReason() {
-  const id = $("reasonId").value;
-  const name = $("reasonName").value.trim();
-
-  if (!name) return;
-
-  if (id) {
-    const { error } = await supabase
-      .from("reasons")
-      .update({ name })
-      .eq("id", id);
-
-    if (error) {
-      toast(error.message);
-      return;
-    }
-  } else {
-    const { error } = await supabase
-      .from("reasons")
-      .insert({
-        name,
-        active: true
-      });
-
-    if (error) {
-      toast(error.message);
-      return;
-    }
-  }
-
-  $("reasonDialog").close();
-
-  await loadReasons();
-  renderAll();
-
-  toast("Motivo guardado 💜");
-}
-
-function esc(s) {
-  return String(s ?? "").replace(
-    /[&<>"']/g,
-    c => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[c])
-  );
-}
+/* =========================
+   EVENTOS
+========================= */
 
 function setupEvents() {
-  $("loginForm").addEventListener("submit", async e => {
-    e.preventDefault();
 
-    $("loginError").textContent = "";
+  /* LOGIN */
 
-    const {
-      error
-    } = await supabase.auth.signInWithPassword({
-      email: $("email").value,
-      password: $("password").value
-    });
+  $("loginForm")
+    .addEventListener(
+      "submit",
+      async event => {
 
-    if (error) {
-      $("loginError").textContent = error.message;
-    }
-  });
+        event.preventDefault();
 
-  $("logoutBtn").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-  });
+        $("loginError")
+          .textContent = "";
 
-  $("datePicker").addEventListener("change", async e => {
-    selectedDate = e.target.value;
-    await loadRecords();
-    renderAll();
-  });
 
-  $("refreshBtn").addEventListener("click", async () => {
-    await loadAll();
-    toast("Actualizado 💜");
-  });
+        const { error } =
+          await supabase.auth
+            .signInWithPassword({
 
-  $("recordStatus").addEventListener(
-    "change",
-    toggleReason
-  );
+              email:
+                $("email").value,
 
-  $("recordForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    await saveRecord();
-  });
+              password:
+                $("password").value
 
-  $("participantForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    await saveParticipant();
-  });
+            });
 
-  $("reasonForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    await saveReason();
-  });
 
-  $("addParticipantBtn").addEventListener("click", () => {
-    $("participantDialogTitle").textContent =
-      "Agregar integrante";
+        if (error) {
 
-    $("participantId").value = "";
-    $("participantName").value = "";
+          $("loginError")
+            .textContent =
+              error.message;
 
-    $("participantDialog").showModal();
-  });
+        }
 
-  $("addReasonBtn").addEventListener("click", () => {
-    $("reasonDialogTitle").textContent =
-      "Agregar motivo";
-
-    $("reasonId").value = "";
-    $("reasonName").value = "";
-
-    $("reasonDialog").showModal();
-  });
-
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document
-        .querySelectorAll(".tab")
-        .forEach(x => x.classList.remove("active"));
-
-      tab.classList.add("active");
-
-      document
-        .querySelectorAll(".tab-panel")
-        .forEach(x => x.classList.add("hidden"));
-
-      const target = $(tab.dataset.tab + "Tab");
-
-      if (target) {
-        target.classList.remove("hidden");
       }
+    );
+
+
+  /* LOGOUT */
+
+  $("logoutBtn")
+    .addEventListener(
+      "click",
+      async () => {
+
+        await supabase.auth
+          .signOut();
+
+      }
+    );
+
+
+  /* FECHA */
+
+  $("voteDate")
+    .addEventListener(
+      "change",
+      async event => {
+
+        selectedDate =
+          event.target.value;
+
+
+        currentFilter =
+          "all";
+
+
+        updateFilterButtons();
+
+
+        await loadRecords();
+
+        renderAll();
+
+      }
+    );
+
+
+  /* ACTUALIZAR */
+
+  $("refreshDailyBtn")
+    .addEventListener(
+      "click",
+      async () => {
+
+        await loadAll();
+
+        toast(
+          "Actualizado 💜"
+        );
+
+      }
+    );
+
+
+  /* FILTROS */
+
+  document
+    .querySelectorAll(".filter-card")
+    .forEach(card => {
+
+      const activate =
+        () => {
+
+          setFilter(
+            card.dataset.filter
+          );
+
+        };
+
+
+      card.addEventListener(
+        "click",
+        activate
+      );
+
+
+      card.addEventListener(
+        "keydown",
+        event => {
+
+          if (
+            event.key === "Enter" ||
+            event.key === " "
+          ) {
+
+            event.preventDefault();
+
+            activate();
+
+          }
+
+        }
+      );
+
     });
-  });
 
-  $("receiptFile").addEventListener("change", e => {
-    const file = e.target.files[0];
 
-    $("receiptName").textContent =
-      file?.name || "Ninguno";
+  /* ESTADO */
 
-    if (file) {
-      const url = URL.createObjectURL(file);
+  $("recordStatus")
+    .addEventListener(
+      "change",
+      toggleReason
+    );
 
-      $("receiptPreview").innerHTML =
-        `<img src="${url}" alt="Vista previa">`;
-    }
-  });
+
+  /* GUARDAR REGISTRO */
+
+  $("recordForm")
+    .addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+        await saveRecord();
+
+      }
+    );
+
+
+  /* AGREGAR PARTICIPANTE */
+
+  $("addParticipantBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        $("participantDialogTitle")
+          .textContent =
+            "Agregar integrante";
+
+
+        $("participantId")
+          .value = "";
+
+
+        $("participantName")
+          .value = "";
+
+
+        $("participantDialog")
+          .showModal();
+
+      }
+    );
+
+
+  /* CANCELAR REGISTRO */
+
+  $("cancelRecordBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        $("recordDialog")
+          .close();
+
+      }
+    );
+
+
+  /* CERRAR REGISTRO */
+
+  $("closeRecordBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        $("recordDialog")
+          .close();
+
+      }
+    );
+
+
+  /* CANCELAR PARTICIPANTE */
+
+  $("cancelParticipantBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        $("participantDialog")
+          .close();
+
+      }
+    );
+
+
+  /* CERRAR PARTICIPANTE */
+
+  $("closeParticipantBtn")
+    .addEventListener(
+      "click",
+      () => {
+
+        $("participantDialog")
+          .close();
+
+      }
+    );
+
+
+  /* GUARDAR PARTICIPANTE */
+
+  $("participantForm")
+    .addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+        await saveParticipant();
+
+      }
+    );
+
+
+  /* TABS */
+
+  document
+    .querySelectorAll(".tab")
+    .forEach(tab => {
+
+      tab.addEventListener(
+        "click",
+        () => {
+
+          document
+            .querySelectorAll(".tab")
+            .forEach(
+              x =>
+                x.classList
+                  .remove("active")
+            );
+
+
+          tab.classList
+            .add("active");
+
+
+          const daily =
+            $("dailyPanel");
+
+          const participantsPanel =
+            $("participantsPanel");
+
+
+          if (
+            tab.dataset.tab === "daily"
+          ) {
+
+            daily.classList
+              .remove("hidden");
+
+            participantsPanel
+              .classList
+              .add("hidden");
+
+          } else {
+
+            daily.classList
+              .add("hidden");
+
+            participantsPanel
+              .classList
+              .remove("hidden");
+
+          }
+
+        }
+      );
+
+    });
+
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
+
+/* =========================
+   ACTUALIZAR FILTROS
+========================= */
+
+function updateFilterButtons() {
+
+  document
+    .querySelectorAll(".filter-card")
+    .forEach(card => {
+
+      card.classList.toggle(
+        "active",
+        card.dataset.filter ===
+          currentFilter
+      );
+
+    });
+
+}
+
+
+/* =========================
+   ARRANCAR
+========================= */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    boot
+  );
+
 } else {
+
   boot();
+
       }
