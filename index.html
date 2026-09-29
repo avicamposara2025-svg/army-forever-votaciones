@@ -1,64 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#14002e" />
   <title>ARMY FOREVER · Control de Votaciones</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
-  <div id="toast" class="toast"></div>
 
+<body>
+
+  <!-- LOGIN -->
   <section id="loginView" class="login-view">
     <div class="login-bg"></div>
     <div class="login-overlay"></div>
+
     <div class="login-card glass">
       <div class="mini-brand">💜 ARMY FOREVER</div>
-      <h1>Control de<br><span>Votaciones</span></h1>
-      <p>Un espacio privado para llevar el registro diario del grupo.</p>
+
+      <h1>Control de votaciones</h1>
+      <p>Ingresa para administrar el registro diario.</p>
+
       <form id="loginForm">
-        <label>Correo
-          <input id="email" type="email" required autocomplete="email" placeholder="tu correo">
+        <label>
+          Correo
+          <input
+            id="email"
+            type="email"
+            autocomplete="email"
+            required
+          />
         </label>
-        <label>Contraseña
-          <input id="password" type="password" required autocomplete="current-password" placeholder="••••••••">
+
+        <label>
+          Contraseña
+          <input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
         </label>
-        <button class="primary-btn" type="submit">Entrar 💜</button>
+
+        <button class="primary-btn" type="submit">
+          Ingresar
+        </button>
       </form>
-      <p id="loginError" class="error"></p>
+
+      <p id="loginError" class="error-text"></p>
     </div>
   </section>
 
+
+  <!-- APP -->
   <section id="appView" class="app-view hidden">
+
+    <!-- HERO -->
     <header class="hero">
-      <div class="hero-photo"></div>
+      <img
+        class="hero-photo"
+        src="./assets/bts-group.png"
+        alt="BTS"
+      />
+
       <div class="hero-shade"></div>
+
       <div class="hero-content">
         <div class="topbar">
-          <div class="brand">ARMY <span>FOREVER</span></div>
-          <button id="logoutBtn" class="icon-btn" title="Cerrar sesión">↪</button>
+
+          <div class="brand">
+            <div class="brand-title">ARMY FOREVER</div>
+            <div class="brand-subtitle">Control de votaciones</div>
+          </div>
+
+          <button
+            id="logoutBtn"
+            class="icon-btn"
+            type="button"
+            title="Cerrar sesión"
+          >
+            ⇥
+          </button>
+
         </div>
+
         <div class="hero-title">
-          <div class="eyebrow">💜 CONTROL DE VOTACIONES</div>
-          <h1>Juntos hacemos<br><em>la diferencia</em></h1>
+          <span class="section-kicker">REGISTRO DIARIO</span>
+          <h1>Votaciones ARMY</h1>
+          <p>Controla fácilmente el estado de cada integrante.</p>
         </div>
       </div>
     </header>
 
-    <main class="container">
-      <section class="date-row">
-        <div>
-          <div class="section-kicker">REGISTRO DEL DÍA</div>
-          <h2 id="selectedDateLabel"></h2>
-        </div>
-        <input id="datePicker" type="date" class="date-input">
-      </section>
 
+    <main class="container">
+
+      <!-- DATE -->
+      <div class="date-row">
+        <div>
+          <span class="section-kicker">FECHA</span>
+          <h2 id="dateTitle">Registro del día</h2>
+        </div>
+
+        <input
+          id="voteDate"
+          class="date-input"
+          type="date"
+        />
+      </div>
+
+
+      <!-- STATS -->
       <section class="stats-grid">
+
         <div class="stat-card">
           <span>👥</span>
           <strong id="totalCount">0</strong>
@@ -88,124 +141,326 @@
           <strong id="pendingCount">0</strong>
           <small>Pendientes</small>
         </div>
+
       </section>
 
-      <nav class="tabs">
-        <button class="tab active" data-tab="daily">📅 Registro diario</button>
-        <button class="tab" data-tab="participants">👥 Participantes</button>
-        <button class="tab" data-tab="reasons">📝 Motivos</button>
-      </nav>
 
-      <section id="dailyTab" class="tab-panel">
+      <!-- TABS -->
+      <section class="tabs">
+
+        <button
+          class="tab active"
+          data-tab="daily"
+          type="button"
+        >
+          Registro diario
+        </button>
+
+        <button
+          class="tab"
+          data-tab="participants"
+          type="button"
+        >
+          Participantes
+        </button>
+
+      </section>
+
+
+      <!-- DAILY -->
+      <section
+        id="dailyPanel"
+        class="tab-panel active"
+      >
+
         <div class="panel-head">
           <div>
+            <span class="section-kicker">HOY</span>
+            <h2>Estado de votación</h2>
+          </div>
+
+          <button
+            id="refreshDailyBtn"
+            class="secondary-btn"
+            type="button"
+          >
+            Actualizar
+          </button>
+        </div>
+
+        <div
+          id="peopleList"
+          class="people-list"
+        ></div>
+
+      </section>
+
+
+      <!-- PARTICIPANTS -->
+      <section
+        id="participantsPanel"
+        class="tab-panel"
+      >
+
+        <div class="panel-head">
+          <div>
+            <span class="section-kicker">ARMY FOREVER</span>
             <h2>Participantes</h2>
-            <p>Registra el estado y guarda el comprobante de cada persona.</p>
           </div>
-          <button id="refreshBtn" class="secondary-btn">↻ Actualizar</button>
+
+          <button
+            id="addParticipantBtn"
+            class="primary-btn"
+            type="button"
+          >
+            + Agregar
+          </button>
         </div>
-        <div id="participantsList" class="people-list"></div>
+
+        <div
+          id="manageList"
+          class="manage-list"
+        ></div>
+
       </section>
 
-      <section id="participantsTab" class="tab-panel hidden">
-        <div class="panel-head">
-          <div>
-            <h2>Integrantes</h2>
-            <p>Agrega, edita o elimina participantes.</p>
-          </div>
-          <button id="addParticipantBtn" class="primary-btn small">＋ Agregar</button>
-        </div>
-        <div id="manageParticipants" class="manage-list"></div>
-      </section>
-
-      <section id="reasonsTab" class="tab-panel hidden">
-        <div class="panel-head">
-          <div>
-            <h2>Motivos</h2>
-            <p>Crea los motivos que quieras usar cuando alguien no pueda votar.</p>
-          </div>
-          <button id="addReasonBtn" class="primary-btn small">＋ Agregar</button>
-        </div>
-        <div id="manageReasons" class="manage-list"></div>
-      </section>
     </main>
 
-    <footer>💜 ARMY FOREVER · Control privado de votaciones</footer>
+
+    <!-- RECORD DIALOG -->
+    <dialog id="recordDialog">
+      <div class="dialog-card">
+
+        <button
+          id="closeRecordBtn"
+          class="close-btn"
+          type="button"
+        >
+          ×
+        </button>
+
+        <span class="section-kicker">
+          REGISTRO DIARIO
+        </span>
+
+        <h2 id="recordParticipantName">
+          Participante
+        </h2>
+
+        <p id="recordDateText"></p>
+
+
+        <form id="recordForm">
+
+          <input
+            id="recordParticipantId"
+            type="hidden"
+          />
+
+          <label>
+            Estado
+            <select id="recordStatus">
+              <option value="voted">
+                🟢 Votó
+              </option>
+
+              <option value="no_voted">
+                ❌ No votó
+              </option>
+
+              <option value="justified">
+                🟡 Justificada
+              </option>
+
+              <option value="pending">
+                🔴 Pendiente
+              </option>
+            </select>
+          </label>
+
+
+          <div
+            id="reasonWrap"
+            class="hidden"
+          >
+            <label>
+              Motivo de justificación
+
+              <select id="recordReason">
+                <option value="">
+                  Selecciona un motivo
+                </option>
+
+                <option value="work">
+                  Trabajo
+                </option>
+
+                <option value="study">
+                  Estudio
+                </option>
+
+                <option value="health">
+                  Salud
+                </option>
+
+                <option value="personal">
+                  Situación personal
+                </option>
+
+                <option value="other">
+                  Otro
+                </option>
+              </select>
+            </label>
+          </div>
+
+
+          <label>
+            Notas
+
+            <textarea
+              id="recordNotes"
+              rows="4"
+              placeholder="Agrega una nota si es necesario..."
+            ></textarea>
+          </label>
+
+
+          <div class="dialog-actions">
+
+            <button
+              id="cancelRecordBtn"
+              class="secondary-btn"
+              type="button"
+            >
+              Cancelar
+            </button>
+
+            <button
+              class="primary-btn"
+              type="submit"
+            >
+              Guardar registro
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+    </dialog>
+
+
+    <!-- PARTICIPANT DIALOG -->
+    <dialog id="participantDialog">
+      <div class="dialog-card">
+
+        <button
+          id="closeParticipantBtn"
+          class="close-btn"
+          type="button"
+        >
+          ×
+        </button>
+
+        <span class="section-kicker">
+          PARTICIPANTE
+        </span>
+
+        <h2 id="participantDialogTitle">
+          Agregar participante
+        </h2>
+
+        <form id="participantForm">
+
+          <input
+            id="participantId"
+            type="hidden"
+          />
+
+          <label>
+            Nombre
+            <input
+              id="participantName"
+              type="text"
+              required
+            />
+          </label>
+
+          <div class="dialog-actions">
+
+            <button
+              id="cancelParticipantBtn"
+              class="secondary-btn"
+              type="button"
+            >
+              Cancelar
+            </button>
+
+            <button
+              class="primary-btn"
+              type="submit"
+            >
+              Guardar
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+    </dialog>
+
+
+    <!-- RECEIPT -->
+    <dialog id="receiptDialog">
+      <div class="dialog-card">
+
+        <button
+          id="closeReceiptBtn"
+          class="close-btn"
+          type="button"
+        >
+          ×
+        </button>
+
+        <span class="section-kicker">
+          CONFIRMACIÓN
+        </span>
+
+        <h2>Registro guardado</h2>
+
+        <div
+          id="receiptBox"
+          class="receipt-box"
+        ></div>
+
+        <button
+          id="receiptOkBtn"
+          class="primary-btn"
+          type="button"
+        >
+          Aceptar
+        </button>
+
+      </div>
+    </dialog>
+
+
+    <!-- TOAST -->
+    <div
+      id="toast"
+      class="toast"
+      aria-live="polite"
+    ></div>
+
   </section>
 
-  <dialog id="participantDialog">
-    <form method="dialog" id="participantForm" class="dialog-card">
-      <button class="close-btn" value="cancel">×</button>
-      <h3 id="participantDialogTitle">Agregar integrante</h3>
-      <input type="hidden" id="participantId">
-      <label>Nombre
-        <input id="participantName" required maxlength="80" placeholder="Nombre de la integrante">
-      </label>
-      <div class="dialog-actions">
-        <button class="secondary-btn" value="cancel">Cancelar</button>
-        <button class="primary-btn" value="default">Guardar</button>
-      </div>
-    </form>
-  </dialog>
 
-  <dialog id="reasonDialog">
-    <form method="dialog" id="reasonForm" class="dialog-card">
-      <button class="close-btn" value="cancel">×</button>
-      <h3 id="reasonDialogTitle">Agregar motivo</h3>
-      <input type="hidden" id="reasonId">
-      <label>Motivo
-        <input id="reasonName" required maxlength="100" placeholder="Ej. Trabajo">
-      </label>
-      <div class="dialog-actions">
-        <button class="secondary-btn" value="cancel">Cancelar</button>
-        <button class="primary-btn" value="default">Guardar</button>
-      </div>
-    </form>
-  </dialog>
+  <script
+    type="module"
+    src="./app.js"
+  ></script>
 
-  <dialog id="recordDialog">
-    <form method="dialog" id="recordForm" class="dialog-card wide">
-      <button class="close-btn" value="cancel">×</button>
-      <div id="recordPerson"></div>
-
-      <input type="hidden" id="recordParticipantId">
-      <input type="hidden" id="recordId">
-
-      <label>Estado
-        <select id="recordStatus">
-          <option value="voted">🟢 Votó</option>
-          <option value="no_voted">❌ No votó</option>
-          <option value="justified">🟡 Justificada</option>
-          <option value="pending">🔴 Pendiente</option>
-        </select>
-      </label>
-
-      <label id="reasonWrap">Motivo
-        <select id="recordReason">
-          <option value="">Selecciona un motivo</option>
-        </select>
-      </label>
-
-      <label>Nota opcional
-        <textarea id="recordNotes" rows="3" placeholder="Puedes añadir un detalle..."></textarea>
-      </label>
-
-      <div class="receipt-box">
-        <div>
-          <strong>📸 Comprobante</strong>
-          <span id="receiptName">Ninguno</span>
-        </div>
-        <input id="receiptFile" type="file" accept="image/*">
-        <div id="receiptPreview"></div>
-      </div>
-
-      <div class="dialog-actions">
-        <button class="secondary-btn" value="cancel">Cancelar</button>
-        <button class="primary-btn" value="default">Guardar registro</button>
-      </div>
-    </form>
-  </dialog>
-
-  <script type="module" src="./app.js"></script>
 </body>
-</html>
+  </html>
