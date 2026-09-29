@@ -59,10 +59,35 @@
       </section>
 
       <section class="stats-grid">
-        <div class="stat-card"><span>👥</span><strong id="totalCount">0</strong><small>Integrantes</small></div>
-        <div class="stat-card success"><span>✓</span><strong id="votedCount">0</strong><small>Votaron</small></div>
-        <div class="stat-card warn"><span>!</span><strong id="justifiedCount">0</strong><small>Justificadas</small></div>
-        <div class="stat-card danger"><span>×</span><strong id="pendingCount">0</strong><small>Pendientes</small></div>
+        <div class="stat-card">
+          <span>👥</span>
+          <strong id="totalCount">0</strong>
+          <small>Integrantes</small>
+        </div>
+
+        <div class="stat-card success">
+          <span>✓</span>
+          <strong id="votedCount">0</strong>
+          <small>Votaron</small>
+        </div>
+
+        <div class="stat-card danger">
+          <span>×</span>
+          <strong id="noVotedCount">0</strong>
+          <small>No votaron</small>
+        </div>
+
+        <div class="stat-card warn">
+          <span>!</span>
+          <strong id="justifiedCount">0</strong>
+          <small>Justificadas</small>
+        </div>
+
+        <div class="stat-card pending">
+          <span>⏳</span>
+          <strong id="pendingCount">0</strong>
+          <small>Pendientes</small>
+        </div>
       </section>
 
       <nav class="tabs">
@@ -73,7 +98,10 @@
 
       <section id="dailyTab" class="tab-panel">
         <div class="panel-head">
-          <div><h2>Participantes</h2><p>Registra el estado y guarda el comprobante de cada persona.</p></div>
+          <div>
+            <h2>Participantes</h2>
+            <p>Registra el estado y guarda el comprobante de cada persona.</p>
+          </div>
           <button id="refreshBtn" class="secondary-btn">↻ Actualizar</button>
         </div>
         <div id="participantsList" class="people-list"></div>
@@ -81,7 +109,10 @@
 
       <section id="participantsTab" class="tab-panel hidden">
         <div class="panel-head">
-          <div><h2>Integrantes</h2><p>Agrega, edita o elimina participantes.</p></div>
+          <div>
+            <h2>Integrantes</h2>
+            <p>Agrega, edita o elimina participantes.</p>
+          </div>
           <button id="addParticipantBtn" class="primary-btn small">＋ Agregar</button>
         </div>
         <div id="manageParticipants" class="manage-list"></div>
@@ -89,7 +120,10 @@
 
       <section id="reasonsTab" class="tab-panel hidden">
         <div class="panel-head">
-          <div><h2>Motivos</h2><p>Crea los motivos que quieras usar cuando alguien no pueda votar.</p></div>
+          <div>
+            <h2>Motivos</h2>
+            <p>Crea los motivos que quieras usar cuando alguien no pueda votar.</p>
+          </div>
           <button id="addReasonBtn" class="primary-btn small">＋ Agregar</button>
         </div>
         <div id="manageReasons" class="manage-list"></div>
@@ -133,26 +167,38 @@
     <form method="dialog" id="recordForm" class="dialog-card wide">
       <button class="close-btn" value="cancel">×</button>
       <div id="recordPerson"></div>
+
       <input type="hidden" id="recordParticipantId">
       <input type="hidden" id="recordId">
+
       <label>Estado
         <select id="recordStatus">
           <option value="voted">🟢 Votó</option>
-          <option value="justified">🟡 No pudo votar</option>
+          <option value="no_voted">❌ No votó</option>
+          <option value="justified">🟡 Justificada</option>
           <option value="pending">🔴 Pendiente</option>
         </select>
       </label>
+
       <label id="reasonWrap">Motivo
-        <select id="recordReason"><option value="">Selecciona un motivo</option></select>
+        <select id="recordReason">
+          <option value="">Selecciona un motivo</option>
+        </select>
       </label>
+
       <label>Nota opcional
         <textarea id="recordNotes" rows="3" placeholder="Puedes añadir un detalle..."></textarea>
       </label>
+
       <div class="receipt-box">
-        <div><strong>📸 Comprobante</strong><span id="receiptName">Ninguno</span></div>
+        <div>
+          <strong>📸 Comprobante</strong>
+          <span id="receiptName">Ninguno</span>
+        </div>
         <input id="receiptFile" type="file" accept="image/*">
         <div id="receiptPreview"></div>
       </div>
+
       <div class="dialog-actions">
         <button class="secondary-btn" value="cancel">Cancelar</button>
         <button class="primary-btn" value="default">Guardar registro</button>
