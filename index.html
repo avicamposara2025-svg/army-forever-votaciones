@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#14002e" />
+  <title>ARMY FOREVER · Control de Votaciones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <section id="loginView" class="login-view">
+    <div class="login-bg"></div>
+    <div class="login-overlay"></div>
+    <div class="login-card glass">
+      <div class="mini-brand">💜 ARMY FOREVER</div>
+      <h1>Control de<br><span>Votaciones</span></h1>
+      <p>Un espacio privado para llevar el registro diario del grupo.</p>
+      <form id="loginForm">
+        <label>Correo
+          <input id="email" type="email" required autocomplete="email" placeholder="tu correo">
+        </label>
+        <label>Contraseña
+          <input id="password" type="password" required autocomplete="current-password" placeholder="••••••••">
+        </label>
+        <button class="primary-btn" type="submit">Entrar 💜</button>
+      </form>
+      <p id="loginError" class="error"></p>
+    </div>
+  </section>
+
+  <section id="appView" class="app-view hidden">
+    <header class="hero">
+      <div class="hero-photo"></div>
+      <div class="hero-shade"></div>
+      <div class="hero-content">
+        <div class="topbar">
+          <div class="brand">ARMY <span>FOREVER</span></div>
+          <button id="logoutBtn" class="icon-btn" title="Cerrar sesión">↪</button>
+        </div>
+        <div class="hero-title">
+          <div class="eyebrow">💜 CONTROL DE VOTACIONES</div>
+          <h1>Juntos hacemos<br><em>la diferencia</em></h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="date-row">
+        <div>
+          <div class="section-kicker">REGISTRO DEL DÍA</div>
+          <h2 id="selectedDateLabel"></h2>
+        </div>
+        <input id="datePicker" type="date" class="date-input">
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card"><span>👥</span><strong id="totalCount">0</strong><small>Integrantes</small></div>
+        <div class="stat-card success"><span>✓</span><strong id="votedCount">0</strong><small>Votaron</small></div>
+        <div class="stat-card warn"><span>!</span><strong id="justifiedCount">0</strong><small>Justificadas</small></div>
+        <div class="stat-card danger"><span>×</span><strong id="pendingCount">0</strong><small>Pendientes</small></div>
+      </section>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="daily">📅 Registro diario</button>
+        <button class="tab" data-tab="participants">👥 Participantes</button>
+        <button class="tab" data-tab="reasons">📝 Motivos</button>
+      </nav>
+
+      <section id="dailyTab" class="tab-panel">
+        <div class="panel-head">
+          <div><h2>Participantes</h2><p>Registra el estado y guarda el comprobante de cada persona.</p></div>
+          <button id="refreshBtn" class="secondary-btn">↻ Actualizar</button>
+        </div>
+        <div id="participantsList" class="people-list"></div>
+      </section>
+
+      <section id="participantsTab" class="tab-panel hidden">
+        <div class="panel-head">
+          <div><h2>Integrantes</h2><p>Agrega, edita o elimina participantes.</p></div>
+          <button id="addParticipantBtn" class="primary-btn small">＋ Agregar</button>
+        </div>
+        <div id="manageParticipants" class="manage-list"></div>
+      </section>
+
+      <section id="reasonsTab" class="tab-panel hidden">
+        <div class="panel-head">
+          <div><h2>Motivos</h2><p>Crea los motivos que quieras usar cuando alguien no pueda votar.</p></div>
+          <button id="addReasonBtn" class="primary-btn small">＋ Agregar</button>
+        </div>
+        <div id="manageReasons" class="manage-list"></div>
+      </section>
+    </main>
+
+    <footer>💜 ARMY FOREVER · Control privado de votaciones</footer>
+  </section>
+
+  <dialog id="participantDialog">
+    <form method="dialog" id="participantForm" class="dialog-card">
+      <button class="close-btn" value="cancel">×</button>
+      <h3 id="participantDialogTitle">Agregar integrante</h3>
+      <input type="hidden" id="participantId">
+      <label>Nombre
+        <input id="participantName" required maxlength="80" placeholder="Nombre de la integrante">
+      </label>
+      <div class="dialog-actions">
+        <button class="secondary-btn" value="cancel">Cancelar</button>
+        <button class="primary-btn" value="default">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="reasonDialog">
+    <form method="dialog" id="reasonForm" class="dialog-card">
+      <button class="close-btn" value="cancel">×</button>
+      <h3 id="reasonDialogTitle">Agregar motivo</h3>
+      <input type="hidden" id="reasonId">
+      <label>Motivo
+        <input id="reasonName" required maxlength="100" placeholder="Ej. Trabajo">
+      </label>
+      <div class="dialog-actions">
+        <button class="secondary-btn" value="cancel">Cancelar</button>
+        <button class="primary-btn" value="default">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="recordDialog">
+    <form method="dialog" id="recordForm" class="dialog-card wide">
+      <button class="close-btn" value="cancel">×</button>
+      <div id="recordPerson"></div>
+      <input type="hidden" id="recordParticipantId">
+      <input type="hidden" id="recordId">
+      <label>Estado
+        <select id="recordStatus">
+          <option value="voted">🟢 Votó</option>
+          <option value="justified">🟡 No pudo votar</option>
+          <option value="pending">🔴 Pendiente</option>
+        </select>
+      </label>
+      <label id="reasonWrap">Motivo
+        <select id="recordReason"><option value="">Selecciona un motivo</option></select>
+      </label>
+      <label>Nota opcional
+        <textarea id="recordNotes" rows="3" placeholder="Puedes añadir un detalle..."></textarea>
+      </label>
+      <div class="receipt-box">
+        <div><strong>📸 Comprobante</strong><span id="receiptName">Ninguno</span></div>
+        <input id="receiptFile" type="file" accept="image/*">
+        <div id="receiptPreview"></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="secondary-btn" value="cancel">Cancelar</button>
+        <button class="primary-btn" value="default">Guardar registro</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
