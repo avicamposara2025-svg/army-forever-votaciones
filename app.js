@@ -180,15 +180,24 @@ function renderStats() {
     p => recordFor(p.id)?.status === "voted"
   ).length;
 
+  const noVoted = participants.filter(
+    p => recordFor(p.id)?.status === "no_voted"
+  ).length;
+
   const justified = participants.filter(
     p => recordFor(p.id)?.status === "justified"
   ).length;
 
+  const pending = participants.filter(
+    p => !recordFor(p.id) ||
+         recordFor(p.id)?.status === "pending"
+  ).length;
+
   $("totalCount").textContent = total;
   $("votedCount").textContent = voted;
+  $("noVotedCount").textContent = noVoted;
   $("justifiedCount").textContent = justified;
-  $("pendingCount").textContent =
-    Math.max(0, total - voted - justified);
+  $("pendingCount").textContent = pending;
 }
 
 function renderDaily() {
@@ -217,6 +226,11 @@ function renderDaily() {
     if (r?.status === "voted") {
       cls = "status-voted";
       txt = "🟢 Votó";
+    }
+
+    if (r?.status === "no_voted") {
+      cls = "status-no-voted";
+      txt = "❌ No votó";
     }
 
     if (r?.status === "justified") {
@@ -769,4 +783,4 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", boot);
 } else {
   boot();
-                                               }
+      }
